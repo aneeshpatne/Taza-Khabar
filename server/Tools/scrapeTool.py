@@ -1,44 +1,102 @@
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 import json
 from typing import Dict, List, Any
+import asyncio
 
-def scrape(urls: List[str]) -> List[Dict[str, Any]]:
+async def scrape(urls: List[str]) -> List[Dict[str, Any]]:
     results = []
     
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
+        async with async_playwright() as p:
+            # Launch browser with better options to avoid detection
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-dev-shm-usage',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor'
+                ]
+            )
             
-            page.set_extra_http_headers({
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            # Create context with better settings
+            context = await browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                viewport={"width": 1920, "height": 1080},
+                ignore_https_errors=True
+            )
+            
+            page = await context.new_page()
+            
+            # Stealth settings to avoid detection
+            await page.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined,
+                });
+            """)
+            
+            await page.set_extra_http_headers({
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "keep-alive",
+                "Upgrade-Insecure-Requests": "1"
             })
             
             for url in urls:
                 try:
-                    page.goto(url, wait_until="networkidle", timeout=30000)
+                    # Load page and wait for DOM content to be loaded
+                    await page.goto(url, wait_until="domcontentloaded", timeout=10000)
                     
-                    text_blocks = page.locator("body p, body h1, body h2, body h3, body h4, body h5, body h6").all_text_contents()
+                    # Wait a bit for dynamic content to load
+                    await page.wait_for_timeout(2000)
                     
-                    text_blocks = [text.strip() for text in text_blocks if text.strip()][:5000]
+                    # Try to get text content with better selectors
+                    text_blocks = []
+                    
+                    # Try different selectors for better content extraction
+                    selectors = [
+                        "article p, article h1, article h2, article h3, article h4, article h5, article h6",
+                        "main p, main h1, main h2, main h3, main h4, main h5, main h6",
+                        ".content p, .content h1, .content h2, .content h3, .content h4, .content h5, .content h6",
+                        "body p, body h1, body h2, body h3, body h4, body h5, body h6"
+                    ]
+                    
+                    for selector in selectors:
+                        try:
+                            elements = await page.locator(selector).all_text_contents()
+                            if elements:
+                                text_blocks = elements
+                                break
+                        except Exception:
+                            continue
+                    
+                    # Clean and limit text blocks
+                    text_blocks = [text.strip() for text in text_blocks if text.strip() and len(text.strip()) > 10][:100]
                     
                     content = {
                         "url": url,
-                        "title": page.title(),
+                        "title": await page.title(),
                         "text_blocks": text_blocks,
-                        "success": True
+                        "success": True,
+                        "content_length": len(text_blocks)
                     }
                     
                     results.append(content)
                     
                 except Exception as e:
+                    error_msg = str(e)
+                    print(f"Error scraping {url}: {error_msg}")  # Debug logging
                     results.append({
-                        "error": str(e),
+                        "error": error_msg,
                         "url": url,
-                        "success": False
+                        "success": False,
+                        "error_type": type(e).__name__
                     })
             
-            browser.close()
+            await browser.close()
             return results
             
     except Exception as e:
@@ -53,6 +111,9 @@ def scrape(urls: List[str]) -> List[Dict[str, Any]]:
         return error_results
 
 if __name__ == "__main__":
-    urls = ["https://aneeshpatne.com", "https://httpbin.org/html"]
-    results = scrape(urls)
-    print(json.dumps(results, indent=2))
+    async def main():
+        urls = ["https://www.firstpost.com/explainers/operation-sindoor-india-pakistan-rafale-x-guard-13904322.html", "https://www.opindia.com/2025/07/how-a-30-kg-ai-powered-x-guard-system-fooled-pakistani-army-into-thinking-they-were-hitting-a-rafale/"]
+        results = await scrape(urls)
+        print(json.dumps(results, indent=2))
+    
+    asyncio.run(main())
