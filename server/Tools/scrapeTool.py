@@ -20,7 +20,7 @@ def scrape(urls: List[str]) -> List[Dict[str, Any]]:
                     
                     text_blocks = page.locator("body p, body h1, body h2, body h3, body h4, body h5, body h6").all_text_contents()
                     
-                    text_blocks = [text.strip() for text in text_blocks if text.strip()]
+                    text_blocks = [text.strip() for text in text_blocks if text.strip()][:5000]
                     
                     content = {
                         "url": url,
@@ -53,6 +53,6 @@ def scrape(urls: List[str]) -> List[Dict[str, Any]]:
         return error_results
 
 if __name__ == "__main__":
-    urls = ["https://example.com", "https://httpbin.org/html"]
+    urls = ["https://aneeshpatne.com", "https://httpbin.org/html"]
     results = scrape(urls)
     print(json.dumps(results, indent=2))
