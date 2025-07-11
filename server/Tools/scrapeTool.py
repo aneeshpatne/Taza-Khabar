@@ -53,12 +53,6 @@ def scrape(urls: List[str]) -> List[Dict[str, Any]]:
         return error_results
 
 if __name__ == "__main__":
-    url = "https://example.com"
-    result = scrape(url)
-    print("Single URL result:")
-    print(json.dumps(result, indent=2))
-    
     urls = ["https://example.com", "https://httpbin.org/html"]
     results = scrape(urls)
-    print("\nMultiple URLs result:")
     print(json.dumps(results, indent=2))
