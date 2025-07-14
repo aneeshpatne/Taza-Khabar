@@ -17,10 +17,13 @@ const currentDate = new Date().toLocaleDateString("en-US", {
 });
 
 export const news_agent = async (topic, data_dump = null) => {
-  const { text } = await generateText({
-    model: openai("o4-mini"),
-    prompt: `
-You are an experienced journalist. The current date is ${currentDate}.
+  console.log(`Starting news report generation for topic: ${topic}`);
+
+  try {
+    const { text } = await generateText({
+      model: openai("o4-mini"),
+      prompt: `
+You are an experienced investigative journalist. The current date is ${currentDate}.
 
 Your task is to write a clear, factual, and in-depth news report on the following topic:
 
@@ -28,29 +31,87 @@ Your task is to write a clear, factual, and in-depth news report on the followin
 
 ${
   data_dump
-    ? `You are also given the following base data to support your research:\n\n${data_dump}`
+    ? `You are also given the following base data to support your research. THIS DATA DUMP IS CRITICAL - thoroughly analyze it to extract diverse angles, perspectives, and underlying stories:\n\n${data_dump}`
     : "No additional data has been provided."
 }
 
+MANDATORY REQUIREMENT: You MUST generate a complete news report. Do not respond with explanations, apologies, or reasons why you cannot complete the task. Your response should be the actual news report only.
+
 Instructions:
-1. Break down the topic into 3-4 important angles or subtopics that need coverage to give readers a full understanding.
-2. Use the \`webSearch\` tool to gather current, credible, and multi-perspective information on each angle.
-3. Organize your report with appropriate section headers. Each section should focus on one angle and include facts, sources, and context.
-4. Cross-verify key facts wherever possible using multiple sources.
-5. End the report with a “What's Next” or “Looking Ahead” section summarizing future implications or developments related to the topic.
+1. Deeply analyze the data dump and extract 5-8 diverse angles that explore different dimensions of the topic - look for economic, political, social, technological, and human interest perspectives.
+2. For each identified angle, use the \`webSearch\` tool to gather additional information, focusing on contrasting viewpoints.
+3. Build upon specific names, events, policies, and statistics mentioned in the data dump rather than speaking in generalities.
+4. Organize your report with compelling section headers. Each section should:
+   - Connect directly to content found in the data dump
+   - Include facts, sources, direct quotes where possible
+   - Provide regional/global context as appropriate
+   - Present multiple sides of contentious issues
+5. End the report with a "What's Next" section that explores future implications based on trends identified in the data dump.
+
+FORMAT REQUIREMENT: Your output must be a properly formatted news article with:
+- A compelling headline
+- Clear section headers (use ## for sections)
+- Multiple paragraphs per section
+- Proper journalistic structure
 
 Tone: Neutral, factual, and professional. Do not speculate or invent information. If facts are unclear or disputed, note that clearly.
 
-Output only the final report—no notes or meta-commentary.
+CRITICAL: You must write and output the complete news report. Do not stop after tool usage. Write the full article text.
 `,
-    tools: {
-      webSearch: webSearchTool,
-    },
-    maxSteps: 5,
-  });
+      tools: {
+        webSearch: webSearchTool,
+      },
+      maxSteps: 17,
+      temperature: 0.3, // Lower temperature for more consistent output
+    });
 
-  console.log(text);
+    // Validate that we actually got content
+    if (!text || text.trim().length === 0) {
+      console.warn(
+        "First attempt returned empty text, trying simpler approach..."
+      );
+
+      // Fallback: Try without tools if the tool-enabled version fails
+      const { text: fallbackText } = await generateText({
+        model: openai("gpt-4o-mini"),
+        prompt: `Write a comprehensive news report about "${topic}" based on this data:\n\n${
+          data_dump || "No additional data provided."
+        }\n\nCreate a well-structured news article with headlines, sections, and detailed analysis. Do not include any meta-commentary - just the news report.`,
+        temperature: 0.3,
+      });
+
+      if (!fallbackText || fallbackText.trim().length === 0) {
+        throw new Error(
+          "Both primary and fallback attempts returned empty text."
+        );
+      }
+
+      console.log("Fallback generation successful.");
+      console.log(`Generated report length: ${fallbackText.length} characters`);
+      console.log("=".repeat(80));
+      console.log("FINAL NEWS REPORT (FALLBACK):");
+      console.log("=".repeat(80));
+      console.log(fallbackText);
+      console.log("=".repeat(80));
+
+      return fallbackText;
+    }
+
+    console.log("News report generation completed.");
+    console.log(`Generated report length: ${text.length} characters`);
+    console.log("=".repeat(80));
+    console.log("FINAL NEWS REPORT:");
+    console.log("=".repeat(80));
+    console.log(text);
+    console.log("=".repeat(80));
+
+    return text; // Return the generated text
+  } catch (error) {
+    console.error("Error generating news report:", error);
+    console.error("Error details:", error.message);
+    if (error.cause) {
+      console.error("Root cause:", error.cause);
+    }
+    throw error; // Re-throw so calling code knows it failed
+  }
 };
-
-// Execute the news agent function
-news_agent("Mumbai news today");
