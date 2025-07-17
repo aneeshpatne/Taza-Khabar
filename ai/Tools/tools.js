@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import axios from "axios";
-
+let sources = [];
 export const webSearchTool = tool({
   description:
     "Search the web for current information, news, or any topic. Use this tool whenever a user asks for web search, latest news, current events, or information that requires searching the internet.",
@@ -18,6 +18,8 @@ export const webSearchTool = tool({
       });
 
       console.log("Search results received");
+      const links = response.data.search_results?.links || [];
+      sources.push(...links);
       return response.data;
     } catch (error) {
       console.error("Error performing web search:", error.message);
@@ -28,3 +30,4 @@ export const webSearchTool = tool({
     }
   },
 });
+export const getSources = () => sources;
