@@ -21,7 +21,7 @@ export const news_agent = async (topic, data_dump = null) => {
 
   try {
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4.1-mini"),
       prompt: `
 You are an experienced investigative journalist. The current date is ${currentDate}.
 
@@ -61,8 +61,8 @@ CRITICAL: You must write and output the complete news report. Do not stop after 
       tools: {
         webSearch: webSearchTool,
       },
-      maxSteps: 17,
-      temperature: 0.3, // Lower temperature for more consistent output
+      maxSteps: 7,
+      temperature: 0.3,
     });
 
     console.log("News report generation completed.");
