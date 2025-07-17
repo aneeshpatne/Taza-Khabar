@@ -21,7 +21,7 @@ export const news_agent = async (topic, data_dump = null) => {
 
   try {
     const { text } = await generateText({
-      model: openai("o4-mini"),
+      model: openai("gpt-4o-mini"),
       prompt: `
 You are an experienced investigative journalist. The current date is ${currentDate}.
 
@@ -64,38 +64,6 @@ CRITICAL: You must write and output the complete news report. Do not stop after 
       maxSteps: 17,
       temperature: 0.3, // Lower temperature for more consistent output
     });
-
-    // Validate that we actually got content
-    if (!text || text.trim().length === 0) {
-      console.warn(
-        "First attempt returned empty text, trying simpler approach..."
-      );
-
-      // Fallback: Try without tools if the tool-enabled version fails
-      const { text: fallbackText } = await generateText({
-        model: openai("gpt-4o-mini"),
-        prompt: `Write a comprehensive news report about "${topic}" based on this data:\n\n${
-          data_dump || "No additional data provided."
-        }\n\nCreate a well-structured news article with headlines, sections, and detailed analysis. Do not include any meta-commentary - just the news report.`,
-        temperature: 0.3,
-      });
-
-      if (!fallbackText || fallbackText.trim().length === 0) {
-        throw new Error(
-          "Both primary and fallback attempts returned empty text."
-        );
-      }
-
-      console.log("Fallback generation successful.");
-      console.log(`Generated report length: ${fallbackText.length} characters`);
-      console.log("=".repeat(80));
-      console.log("FINAL NEWS REPORT (FALLBACK):");
-      console.log("=".repeat(80));
-      console.log(fallbackText);
-      console.log("=".repeat(80));
-
-      return fallbackText;
-    }
 
     console.log("News report generation completed.");
     console.log(`Generated report length: ${text.length} characters`);
