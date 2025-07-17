@@ -10,6 +10,9 @@ try {
   });
 
   console.log(`Found ${dump.data.scraped_data.length} news articles`);
+
+  const initialSources = dump.data.search_results?.links || [];
+
   const extractedText = dump.data.scraped_data
     .map((item) => {
       if (item.text_blocks && Array.isArray(item.text_blocks)) {
@@ -19,15 +22,14 @@ try {
     })
     .join("\n\n");
 
-  console.log("Extracted News Text.");
-  console.log("=".repeat(50));
-
   const newsReport = await news_agent("India News", extractedText);
   console.log("News report generation successful!");
-  let sources = getSources();
-  console.log(sources);
+
+  const allSources = [...new Set([...initialSources, ...getSources()])];
+
   await db.insert(schema.news).values({
     content: newsReport,
+    sources: allSources,
   });
   console.log("News report saved to database successfully!");
 } catch (error) {

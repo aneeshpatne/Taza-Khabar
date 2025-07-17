@@ -3,4 +3,5 @@ export const news = pgTable("news", {
   id: integer("id").primaryKey(),
   createdAt: timestamp("created_at").defaultNow(),
   content: text("content").notNull(),
+  sources: text("sources").array(),
 });
