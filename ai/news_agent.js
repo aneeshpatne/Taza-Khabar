@@ -1,7 +1,7 @@
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import dotenv from "dotenv";
-import { webSearchTool } from "./Tools/tools.js";
+import { webSearchTool, titleTool } from "./Tools/tools.js";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -38,18 +38,19 @@ ${
 MANDATORY REQUIREMENT: You MUST generate a complete news report. Do not respond with explanations, apologies, or reasons why you cannot complete the task. Your response should be the actual news report only.
 
 Instructions:
-1. Deeply analyze the data dump and extract 5-8 diverse angles that explore different dimensions of the topic - look for economic, political, social, technological, and human interest perspectives.
-2. For each identified angle, use the \`webSearch\` tool to gather additional information, focusing on contrasting viewpoints.
-3. Build upon specific names, events, policies, and statistics mentioned in the data dump rather than speaking in generalities.
-4. Organize your report with compelling section headers. Each section should:
+1. FIRST, use the \`generateTitle\` tool to create a compelling headline for your news report based on the topic.
+2. Deeply analyze the data dump and extract 5-8 diverse angles that explore different dimensions of the topic - look for economic, political, social, technological, and human interest perspectives.
+3. For each identified angle, use the \`webSearch\` tool to gather additional information, focusing on contrasting viewpoints.
+4. Build upon specific names, events, policies, and statistics mentioned in the data dump rather than speaking in generalities.
+5. Organize your report with compelling section headers. Each section should:
    - Connect directly to content found in the data dump
    - Include facts, sources, direct quotes where possible
    - Provide regional/global context as appropriate
    - Present multiple sides of contentious issues
-5. End the report with a "What's Next" section that explores future implications based on trends identified in the data dump.
+6. End the report with a "What's Next" section that explores future implications based on trends identified in the data dump.
 
 FORMAT REQUIREMENT: Your output must be a properly formatted news article with:
-- A compelling headline
+- A compelling headline (generated using the generateTitle tool)
 - Clear section headers (use ## for sections)
 - Multiple paragraphs per section
 - Proper journalistic structure
@@ -60,6 +61,7 @@ CRITICAL: You must write and output the complete news report. Do not stop after 
 `,
       tools: {
         webSearch: webSearchTool,
+        generateTitle: titleTool,
       },
       maxSteps: 7,
       temperature: 0.3,

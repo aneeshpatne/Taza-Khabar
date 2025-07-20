@@ -2,7 +2,7 @@ import { news_agent } from "./news_agent.js";
 import axios from "axios";
 import { db } from "./lib/db.js";
 import * as schema from "./lib/schema/news.js";
-import { getSources } from "./Tools/tools.js";
+import { getSources, getTitle } from "./Tools/tools.js";
 try {
   let dump = await axios.post("http://localhost:8000/web_search", {
     query: "India News",
@@ -28,8 +28,10 @@ try {
   console.log("News report generation successful!");
 
   const allSources = [...new Set([...initialSources, ...getSources()])];
+  const articleTitle = getTitle() || "India News Update"; // Fallback title
 
   await db.insert(schema.news).values({
+    title: articleTitle,
     content: newsReport,
     sources: allSources,
   });

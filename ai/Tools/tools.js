@@ -13,7 +13,7 @@ export const titleTool = tool({
   execute: async ({ topic }) => {
     console.log(`\n Title tool invoked with topic: "${topic}"`);
     const title = `Breaking News: ${topic}`;
-    
+
     // Store the generated title
     generatedTitle = title;
 
@@ -34,7 +34,7 @@ export const webSearchTool = tool({
     try {
       const response = await axios.post("http://localhost:8000/web_search", {
         query: query,
-        num_results: 2,
+        num_results: 5,
       });
 
       console.log("Search results received");
@@ -65,3 +65,4 @@ export const webSearchTool = tool({
   },
 });
 export const getSources = () => sources;
+export const getTitle = () => generatedTitle;
