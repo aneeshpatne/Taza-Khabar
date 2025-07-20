@@ -1,17 +1,13 @@
+import { Suspense } from 'react';
 import ReactMarkdown from "react-markdown";
 import FaviconImage from "./FaviconImage";
 import UserNav from "../../components/UserNav";
 import { db } from "../../../utlis/db/db.js";
 import { news } from "../../../utlis/db/schema/news.js";
 import { eq } from "drizzle-orm";
+import Loading from "./loading";
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  
+async function ArticleContent({ id }: { id: string }) {
   let article;
   
   try {
@@ -447,5 +443,19 @@ export default async function Page({
         </div>
       </footer>
     </div>
+  );
+}
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  return (
+    <Suspense fallback={<Loading />}>
+      <ArticleContent id={id} />
+    </Suspense>
   );
 }
