@@ -6,7 +6,7 @@ import { getSources, getTitle } from "./Tools/tools.js";
 try {
   let dump = await axios.post("http://localhost:8000/web_search", {
     query: "India News",
-    num_results: 2,
+    num_results: 20,
   });
 
   console.log("Response received from web search API");

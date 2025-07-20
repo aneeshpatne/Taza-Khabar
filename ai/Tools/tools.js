@@ -34,7 +34,7 @@ export const webSearchTool = tool({
     try {
       const response = await axios.post("http://localhost:8000/web_search", {
         query: query,
-        num_results: 5,
+        num_results: 3,
       });
 
       console.log("Search results received");
