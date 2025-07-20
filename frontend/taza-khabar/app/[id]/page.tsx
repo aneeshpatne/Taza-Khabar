@@ -47,6 +47,7 @@ The agreement will be formally signed by all participating nations within the ne
       "https://theguardian.com/environment/climate-summit-agreement",
       "https://washingtonpost.com/climate/summit-agreement-2025",
       "https://nytimes.com/climate/global-climate-deal-reached",
+      "https://mausam.aneeshpatne.com",
     ],
     created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
   };
@@ -196,6 +197,35 @@ The agreement will be formally signed by all participating nations within the ne
                 </div>
               </div>
 
+              {/* Sources Section - Compact */}
+              <div className="px-8 py-4 border-b border-gray-200 bg-gray-25">
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    Sources ({article.sources.length})
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {article.sources.map((source, index) => (
+                    <a
+                      key={index}
+                      href={source}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors group"
+                      title={source}
+                    >
+                      <FaviconImage
+                        hostname={new URL(source).hostname}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                        {new URL(source).hostname}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
               {/* Article Content */}
               <div className="px-8 py-8">
                 <div className="prose prose-lg max-w-none">
@@ -247,61 +277,6 @@ The agreement will be formally signed by all participating nations within the ne
                   >
                     {article.content}
                   </ReactMarkdown>
-                </div>
-
-                {/* Sources Section */}
-                <div className="mt-12 pt-8 border-t border-gray-300">
-                  <h3 className="text-lg font-serif font-bold text-gray-900 mb-6">
-                    Sources & References ({article.sources.length})
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {article.sources.map((source, index) => (
-                      <div
-                        key={index}
-                        className="border border-gray-200 hover:border-gray-300 transition-colors"
-                      >
-                        <a
-                          href={source}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center p-4 group hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex-shrink-0 mr-3">
-                            <FaviconImage
-                              hostname={new URL(source).hostname}
-                              className="w-6 h-6 rounded"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-sm font-medium text-gray-900 group-hover:text-gray-700 transition-colors">
-                                {new URL(source).hostname}
-                              </p>
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                #{index + 1}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-600 truncate">
-                              {source}
-                            </p>
-                          </div>
-                          <div className="flex-shrink-0 ml-2">
-                            <svg
-                              className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </div>
-                        </a>
-                      </div>
-                    ))}
-                  </div>
                 </div>
 
                 {/* Article Footer */}
