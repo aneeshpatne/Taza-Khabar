@@ -197,7 +197,6 @@ The agreement will be formally signed by all participating nations within the ne
                 </div>
               </div>
 
-              {/* Sources Section - Compact */}
               <div className="px-8 py-4 border-b border-gray-200 bg-gray-25">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
