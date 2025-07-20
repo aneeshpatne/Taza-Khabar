@@ -1,6 +1,9 @@
 import ReactMarkdown from "react-markdown";
 import FaviconImage from "./FaviconImage";
 import UserNav from "../../components/UserNav";
+import { db } from "../../../utlis/db/db.js";
+import { news } from "../../../utlis/db/schema/news.js";
+import { eq } from "drizzle-orm";
 
 export default async function Page({
   params,
@@ -8,53 +11,47 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  
+  let article;
+  
+  try {
+    // Fetch article data from the database using drizzle
+    const articleResult = await db.select().from(news).where(eq(news.id, id)).limit(1);
+    
+    // Check if article exists
+    if (!articleResult || articleResult.length === 0) {
+      return (
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Article Not Found</h1>
+            <p className="text-gray-600 mb-4">The article you're looking for doesn't exist.</p>
+            <a href="/" className="text-blue-600 hover:text-blue-800 font-medium">
+              Go back to home
+            </a>
+          </div>
+        </div>
+      );
+    }
 
-  // Mock article data - matching your schema: {id, content, sources, created_at}
-  const article = {
-    id: parseInt(id),
-    content: `# Breaking: Global Climate Summit Reaches Historic Agreement
-
-World leaders from over 190 countries have reached a groundbreaking climate agreement at the Global Climate Summit, marking one of the most significant environmental policy achievements in decades.
-
-## Major Commitments Announced
-
-The agreement includes ambitious carbon reduction targets, with participating nations committing to reduce greenhouse gas emissions by 50% by 2030 and achieve net-zero emissions by 2050. The summit also announced a $500 billion global fund for renewable energy infrastructure and climate adaptation projects.
-
-### Key Highlights of the Agreement
-
-• **Immediate phase-out** of coal power plants in developed nations by 2028
-• **$200 billion investment** in solar and wind energy projects worldwide  
-• **Enhanced protection** for global forests and biodiversity hotspots
-• **Technology transfer programs** for developing nations to access clean energy
-• **Mandatory carbon pricing** mechanisms across all participating economies
-
-## International Response
-
-The breakthrough came after three days of intense negotiations, with environmental advocates calling it a "historic moment for our planet." Several world leaders praised the comprehensive nature of the agreement, noting its binding commitments and clear timelines.
-
-## Implementation Timeline
-
-The agreement will be formally signed by all participating nations within the next 30 days, with immediate implementation of several key provisions beginning in Q1 2025.
-
----
-
-*This report was generated using AI analysis of multiple news sources and verified information from official summit documentation.*`,
-    sources: [
-      "https://climatesummit2025.org/official-statement",
-      "https://reuters.com/environment/climate-summit-agreement-2025",
-      "https://bbc.com/news/world-climate-summit-historic-deal",
-      "https://cnn.com/climate/global-agreement-breakthrough",
-      "https://apnews.com/climate-change-summit-deal",
-      "https://theguardian.com/environment/climate-summit-agreement",
-      "https://washingtonpost.com/climate/summit-agreement-2025",
-      "https://nytimes.com/climate/global-climate-deal-reached",
-      "https://mausam.aneeshpatne.com",
-    ],
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-  };
+    article = articleResult[0];
+  } catch (error) {
+    console.error('Database error:', error);
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Article</h1>
+          <p className="text-gray-600 mb-4">There was an error loading the article. Please try again later.</p>
+          <a href="/" className="text-blue-600 hover:text-blue-800 font-medium">
+            Go back to home
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   // Helper function to format date
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date | null) => {
+    if (!dateString) return "Date not available";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -66,7 +63,8 @@ The agreement will be formally signed by all participating nations within the ne
   };
 
   // Helper function to get relative time
-  const getRelativeTime = (dateString: string) => {
+  const getRelativeTime = (dateString: string | Date | null) => {
+    if (!dateString) return "Date not available";
     const date = new Date(dateString);
     const now = new Date();
     const diffInMilliseconds = now.getTime() - date.getTime();
@@ -79,17 +77,46 @@ The agreement will be formally signed by all participating nations within the ne
     if (diffInHours < 24) return `${diffInHours} hours ago`;
     if (diffInDays === 1) return "1 day ago";
     if (diffInDays < 30) return `${diffInDays} days ago`;
-
-    // For demo purposes, let's show recent time for the mock data
-    return "2 hours ago";
+    
+    return date.toLocaleDateString();
   };
 
   // Extract title from content (first line after #)
   const getTitle = (content: string) => {
     const lines = content.split("\n");
     const titleLine = lines.find((line) => line.startsWith("# "));
-    return titleLine ? titleLine.replace("# ", "") : "News Article";
+    return titleLine ? titleLine.replace("# ", "") : article.title || "News Article";
   };
+
+  // Helper function to clean hostname
+  const cleanHostname = (url: string) => {
+    try {
+      const hostname = new URL(url).hostname;
+      return hostname.replace(/^www\./, '').split('.')[0];
+    } catch {
+      return url;
+    }
+  };
+
+  // Process sources to count occurrences
+  const processedSources = article.sources ? (() => {
+    const sourceCount = new Map<string, { count: number; originalUrl: string }>();
+    
+    article.sources.forEach((source: string) => {
+      const cleanName = cleanHostname(source);
+      if (sourceCount.has(cleanName)) {
+        sourceCount.get(cleanName)!.count++;
+      } else {
+        sourceCount.set(cleanName, { count: 1, originalUrl: source });
+      }
+    });
+    
+    return Array.from(sourceCount.entries()).map(([name, data]) => ({
+      name,
+      count: data.count,
+      url: data.originalUrl
+    }));
+  })() : [];
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -171,7 +198,7 @@ The agreement will be formally signed by all participating nations within the ne
                   {getTitle(article.content)}
                 </h1>
                 <div className="text-sm text-gray-300">
-                  {getRelativeTime(article.created_at)} •{" "}
+                  {getRelativeTime(article.createdAt)} •{" "}
                   {Math.ceil(article.content.length / 1000)} min read
                 </div>
               </div>
@@ -192,7 +219,7 @@ The agreement will be formally signed by all participating nations within the ne
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600">
-                      {formatDate(article.created_at)}
+                      {formatDate(article.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -201,26 +228,31 @@ The agreement will be formally signed by all participating nations within the ne
               <div className="px-8 py-4 border-b border-gray-200 bg-gray-25">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                    Sources ({article.sources.length})
+                    Sources ({processedSources.length})
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  {article.sources.map((source, index) => (
+                  {processedSources.map((source, index) => (
                     <a
                       key={index}
-                      href={source}
+                      href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center space-x-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full hover:border-gray-300 hover:bg-gray-50 transition-colors group"
-                      title={source}
+                      title={source.url}
                     >
                       <FaviconImage
-                        hostname={new URL(source).hostname}
+                        hostname={new URL(source.url).hostname}
                         className="w-4 h-4"
                       />
                       <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                        {new URL(source).hostname}
+                        {source.name}
                       </span>
+                      {source.count > 1 && (
+                        <span className="bg-gray-600 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                          {source.count}
+                        </span>
+                      )}
                     </a>
                   ))}
                 </div>
@@ -284,7 +316,7 @@ The agreement will be formally signed by all participating nations within the ne
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">
-                        Published {getRelativeTime(article.created_at)}
+                        Published {getRelativeTime(article.createdAt)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         Article ID: #{article.id}
@@ -316,7 +348,7 @@ The agreement will be formally signed by all participating nations within the ne
                   <div className="flex justify-between items-start">
                     <span className="text-gray-600 text-sm">Published</span>
                     <span className="font-medium text-gray-900 text-right text-sm">
-                      {formatDate(article.created_at)}
+                      {formatDate(article.createdAt)}
                     </span>
                   </div>
                   <div className="flex justify-between items-start">
@@ -328,7 +360,7 @@ The agreement will be formally signed by all participating nations within the ne
                   <div className="flex justify-between items-start">
                     <span className="text-gray-600 text-sm">Sources</span>
                     <span className="font-medium text-gray-900">
-                      {article.sources.length}
+                      {processedSources.length}
                     </span>
                   </div>
                 </div>
