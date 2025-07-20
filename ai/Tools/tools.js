@@ -12,15 +12,29 @@ export const webSearchTool = tool({
     console.log(`\n Web search tool invoked with query: "${query}"`);
 
     try {
-      const response = await axios.post("http://localhost:8000/tool", {
+      const response = await axios.post("http://localhost:8000/web_search", {
         query: query,
         num_results: 2,
       });
 
       console.log("Search results received");
-      const links = response.data.search_results?.links || [];
-      sources.push(...links);
-      return response.data;
+
+      // Extract URLs (keys) and content (values) from the new format
+      const results = response.data.results || {};
+      const urls = Object.keys(results);
+      const content = Object.values(results);
+
+      // Store URLs as sources
+      sources.push(...urls);
+
+      console.log(`Found ${urls.length} URLs with content`);
+
+      // Return the scraped content for the AI to use
+      return {
+        urls: urls,
+        content: content,
+        summary: `Found ${urls.length} relevant articles with scraped content`,
+      };
     } catch (error) {
       console.error("Error performing web search:", error.message);
       return {

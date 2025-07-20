@@ -4,23 +4,25 @@ import { db } from "./lib/db.js";
 import * as schema from "./lib/schema/news.js";
 import { getSources } from "./Tools/tools.js";
 try {
-  let dump = await axios.post("http://localhost:8000/tool", {
+  let dump = await axios.post("http://localhost:8000/web_search", {
     query: "India News",
     num_results: 2,
   });
 
-  console.log(`Found ${dump.data.scraped_data.length} news articles`);
+  console.log("Response received from web search API");
 
-  const initialSources = dump.data.search_results?.links || [];
+  // Extract URLs and content from the new format
+  const results = dump.data.results || {};
+  const urls = Object.keys(results);
+  const content = Object.values(results);
 
-  const extractedText = dump.data.scraped_data
-    .map((item) => {
-      if (item.text_blocks && Array.isArray(item.text_blocks)) {
-        return item.text_blocks.join(" ");
-      }
-      return "";
-    })
-    .join("\n\n");
+  console.log(`Found ${urls.length} news articles`);
+
+  // Use the URLs as initial sources
+  const initialSources = urls;
+
+  // Join all the scraped content
+  const extractedText = content.join("\n\n");
 
   const newsReport = await news_agent("India News", extractedText);
   console.log("News report generation successful!");
