@@ -2,6 +2,26 @@ import { tool } from "ai";
 import { z } from "zod";
 import axios from "axios";
 let sources = [];
+let generatedTitle = "";
+
+export const titleTool = tool({
+  description:
+    "Generate a compelling and relevant title for the news report based on the topic and content provided. Use this tool to create an engaging headline that captures the essence of the news article.",
+  parameters: z.object({
+    topic: z.string().describe("The topic of the news report"),
+  }),
+  execute: async ({ topic }) => {
+    console.log(`\n Title tool invoked with topic: "${topic}"`);
+    const title = `Breaking News: ${topic}`;
+    
+    // Store the generated title
+    generatedTitle = title;
+
+    return {
+      title: title,
+    };
+  },
+});
 export const webSearchTool = tool({
   description:
     "Search the web for current information, news, or any topic. Use this tool whenever a user asks for web search, latest news, current events, or information that requires searching the internet.",
