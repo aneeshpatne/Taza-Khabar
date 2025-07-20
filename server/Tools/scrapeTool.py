@@ -1,11 +1,9 @@
 from playwright.async_api import async_playwright
 import json
-from typing import Dict, List, Any
+from typing import Dict, Any
 import asyncio
 
-async def scrape(urls: List[str]) -> List[Dict[str, Any]]:
-    results = []
-    
+async def scrape(url: str) -> Dict[str, Any]:
     try:
         async with async_playwright() as p:
             # Launch browser with better options to avoid detection
@@ -45,75 +43,70 @@ async def scrape(urls: List[str]) -> List[Dict[str, Any]]:
                 "Upgrade-Insecure-Requests": "1"
             })
             
-            for url in urls:
-                try:
-                    # Load page and wait for DOM content to be loaded
-                    await page.goto(url, wait_until="domcontentloaded", timeout=10000)
-                    
-                    # Wait a bit for dynamic content to load
-                    await page.wait_for_timeout(2000)
-                    
-                    # Try to get text content with better selectors
-                    text_blocks = []
-                    
-                    # Try different selectors for better content extraction
-                    selectors = [
-                        "article p, article h1, article h2, article h3, article h4, article h5, article h6",
-                        "main p, main h1, main h2, main h3, main h4, main h5, main h6",
-                        ".content p, .content h1, .content h2, .content h3, .content h4, .content h5, .content h6",
-                        "body p, body h1, body h2, body h3, body h4, body h5, body h6"
-                    ]
-                    
-                    for selector in selectors:
-                        try:
-                            elements = await page.locator(selector).all_text_contents()
-                            if elements:
-                                text_blocks = elements
-                                break
-                        except Exception:
-                            continue
-                    
-                    # Clean and limit text blocks
-                    text_blocks = [text.strip() for text in text_blocks if text.strip() and len(text.strip()) > 10][:100]
-                    
-                    content = {
-                        "url": url,
-                        "title": await page.title(),
-                        "text_blocks": text_blocks,
-                        "success": True,
-                        "content_length": len(text_blocks)
-                    }
-                    
-                    results.append(content)
-                    
-                except Exception as e:
-                    error_msg = str(e)
-                    print(f"Error scraping {url}: {error_msg}")  # Debug logging
-                    results.append({
-                        "error": error_msg,
-                        "url": url,
-                        "success": False,
-                        "error_type": type(e).__name__
-                    })
-            
-            await browser.close()
-            return results
+            try:
+                # Load page and wait for DOM content to be loaded
+                await page.goto(url, wait_until="domcontentloaded", timeout=10000)
+                
+                # Wait a bit for dynamic content to load
+                await page.wait_for_timeout(2000)
+                
+                # Try to get text content with better selectors
+                text_blocks = []
+                
+                # Try different selectors for better content extraction
+                selectors = [
+                    "article p, article h1, article h2, article h3, article h4, article h5, article h6",
+                    "main p, main h1, main h2, main h3, main h4, main h5, main h6",
+                    ".content p, .content h1, .content h2, .content h3, .content h4, .content h5, .content h6",
+                    "body p, body h1, body h2, body h3, body h4, body h5, body h6"
+                ]
+                
+                for selector in selectors:
+                    try:
+                        elements = await page.locator(selector).all_text_contents()
+                        if elements:
+                            text_blocks = elements
+                            break
+                    except Exception:
+                        continue
+                
+                # Clean and limit text blocks
+                text_blocks = [text.strip() for text in text_blocks if text.strip() and len(text.strip()) > 10][:100]
+                
+                content = {
+                    "url": url,
+                    "title": await page.title(),
+                    "text_blocks": text_blocks,
+                    "success": True,
+                    "content_length": len(text_blocks)
+                }
+                
+                await browser.close()
+                return content
+                
+            except Exception as e:
+                error_msg = str(e)
+                print(f"Error scraping {url}: {error_msg}")  # Debug logging
+                await browser.close()
+                return {
+                    "error": error_msg,
+                    "url": url,
+                    "success": False,
+                    "error_type": type(e).__name__
+                }
             
     except Exception as e:
-        error_results = []
-        for url in urls:
-            error_results.append({
-                "error": str(e),
-                "url": url,
-                "success": False
-            })
-        
-        return error_results
+        return {
+            "error": str(e),
+            "url": url,
+            "success": False,
+            "error_type": type(e).__name__
+        }
 
 if __name__ == "__main__":
     async def main():
-        urls = ["https://www.firstpost.com/explainers/operation-sindoor-india-pakistan-rafale-x-guard-13904322.html", "https://www.opindia.com/2025/07/how-a-30-kg-ai-powered-x-guard-system-fooled-pakistani-army-into-thinking-they-were-hitting-a-rafale/"]
-        results = await scrape(urls)
-        print(json.dumps(results, indent=2))
+        url = "https://www.firstpost.com/explainers/operation-sindoor-india-pakistan-rafale-x-guard-13904322.html"
+        result = await scrape(url)
+        print(json.dumps(result, indent=2))
     
     asyncio.run(main())
