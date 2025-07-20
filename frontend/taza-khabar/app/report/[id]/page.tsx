@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import FaviconImage from "./FaviconImage";
+import UserNav from "../../components/UserNav";
 
 export default async function Page({
   params,
@@ -144,9 +145,9 @@ The agreement will be formally signed by all participating nations within the ne
                 Opinion
               </a>
             </nav>
-            <button className="bg-gray-800 text-white px-4 py-2 text-sm hover:bg-gray-700 transition-colors">
-              Subscribe
-            </button>
+            <div className="flex items-center">
+              <UserNav />
+            </div>
           </div>
         </div>
       </header>

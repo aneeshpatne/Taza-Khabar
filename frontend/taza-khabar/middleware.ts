@@ -40,11 +40,17 @@ export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
     // Public routes that don't require authentication
-    const publicRoutes = ["/auth", "/auth/callback"];
+    const publicRoutes = ["/auth", "/auth/callback", "/"];
     const isPublicRoute = publicRoutes.includes(pathname);
 
+    // Protected routes that require authentication
+    const protectedRoutes = ["/report"];
+    const isProtectedRoute = protectedRoutes.some((route) =>
+      pathname.startsWith(route)
+    );
+
     // If user is not authenticated and trying to access protected route
-    if (!user && !isPublicRoute) {
+    if (!user && (isProtectedRoute || (!isPublicRoute && pathname !== "/"))) {
       return NextResponse.redirect(new URL("/auth", request.url));
     }
 
