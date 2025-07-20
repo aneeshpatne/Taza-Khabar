@@ -10,10 +10,13 @@ class Query(BaseModel):
     num_results: int = 10
 
 @app.post("/web_search")
-def web_search(query: Query):
+async def web_search(query: Query):
     res = search_news_tool(query.query, query.num_results)
-    print(res.get("links", [])) 
-    return {"message": "Search completed successfully."}
+    dic = {}
+    for url in res.get("links", []):
+        dic[url] = await scrape(url)
+    print(dic)
+    return {"results": dic}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
